@@ -1,11 +1,14 @@
 import socket
 import select
 import sys
+import sqlite3
 
 HOST = ''
 PORT = 31415
-#List of connected clients and available message buffer size
+#List of connected clients
 CONNECTION_LIST = []
+#Mapping of connections and their usernames
+ONLINE_USERNAMES = {}
 RECV_BUFFER = 4096
 
 def chat_server():
@@ -28,15 +31,14 @@ def chat_server():
                 sockfd, addr = server_socket.accept()
                 CONNECTION_LIST.append(sockfd)
                 print "Client (%s, %s) connected" % addr
+                #broadcast_message(server_socket, sockfd, "[%s:%s] is now connected\n" % addr)
 
-                broadcast_message(server_socket, sockfd, "[%s:%s] is now connected\n" % addr)
-
-            #New message
+            #Incoming message
             else:
                 try:
                     data = client.recv(RECV_BUFFER)
                     if data:
-                        broadcast_message(server_socket, client, "\r" + '<' + str(client.getpeername()) + '> ' + data)
+                        incoming_protocol_handler(server_socket, client, data)
 
                 except:
                     broadcast_message(server_socket, client, "Client (%s, %s) is offline" % addr)
@@ -46,6 +48,14 @@ def chat_server():
                     continue
 
     server_socket.close()
+
+
+def incoming_protocol_handler(server_socket, client_id, message):
+    if(client_id not in ONLINE_USERNAMES.keys()):
+        client_id.send("Server: Please login or register\n")
+
+    broadcast_message(server_socket, client_id, message)
+
 
 def broadcast_message(server_socket, client_id, message):
     #Do not send message to server's socket or sending client
@@ -57,6 +67,7 @@ def broadcast_message(server_socket, client_id, message):
                 #If unable to send to a socket, close and remove the connection
                 client.close()
                 CONNECTION_LIST.remove(client)
+
 
 if __name__ == '__main__':
     #Exit application if any unhandled exception is thrown

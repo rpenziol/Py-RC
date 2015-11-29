@@ -2,25 +2,28 @@ import socket
 import select
 import sys
 import string
+import getpass
 
+PORT = 31415
+USERNAME = ''
+authenticated = False
 #Available message buffer size
 RECV_BUFFER = 4096
 
 def chat_client():
 
-    if(len(sys.argv) < 3) :
-        print 'Usage : python client.py hostname port'
+    if(len(sys.argv) < 2):
+        print 'Usage : python client.py hostname'
         sys.exit()
 
     HOST = sys.argv[1]
-    PORT = int(sys.argv[2])
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client_socket.settimeout(2)
 
     #Attempt connection to remote host
-    try :
+    try:
         client_socket.connect((HOST, PORT))
-    except :
+    except:
         print 'Unable to connect'
         sys.exit()
 
@@ -36,23 +39,33 @@ def chat_client():
         for sock in read_sockets:
             #Incoming message from server
             if sock == client_socket:
-                data = sock.recv(RECV_BUFFER)
-                if not data :
-                    print '\nDisconnected from chat server'
-                    sys.exit()
-                else :
-                    sys.stdout.write(data)
-                    prompt()
+                incoming_msg = sock.recv(RECV_BUFFER)
+                incoming_protocol_handler(sock, incoming_msg)
 
             #User-entered message
-            else :
-                msg = sys.stdin.readline()
-                client_socket.send(msg)
+            else:
+                outgoing_msg = sys.stdin.readline()
+                outgoing_protocol_handler(client_socket, outgoing_msg)
                 prompt()
 
-def prompt() :
-    sys.stdout.write('<Username> ')
+
+def incoming_protocol_handler(server_socket, message):
+    if not message:
+        print '\nDisconnected from chat server'
+        sys.exit()
+    else:
+        sys.stdout.write(message)
+        prompt()
+
+
+def outgoing_protocol_handler(client_socket, message):
+    client_socket.send(message)
+
+
+def prompt():
+    sys.stdout.write('<' + USERNAME + '> ')
     sys.stdout.flush()
+
 
 if __name__ == '__main__':
     #Exit application if any unhandled exception is thrown
