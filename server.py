@@ -1,7 +1,6 @@
 import socket
 import select
 import sys
-import sqlite3
 
 HOST = ''
 PORT = 31415
@@ -51,8 +50,19 @@ def chat_server():
 
 
 def incoming_protocol_handler(server_socket, client_id, message):
-    if(client_id not in ONLINE_USERNAMES.keys()):
-        client_id.send("Server: Please login or register\n")
+    #if(client_id not in ONLINE_USERNAMES.keys()):
+        #client_id.send("Server: Please login or register\n")
+    global ONLINE_USERNAMES
+
+    command = message.split(': ')
+
+    if command[0] == 'LOGIN':
+        #If username not an online user, add them to dictionary of online users
+        if command[1] not in ONLINE_USERNAMES.values():
+            ONLINE_USERNAMES[client_id] = command[1]
+            client_id.send('LOGINSUCCESS')
+        else:
+            client_id.send('ERR_USERNAMEUNAVAILABLE')
 
     broadcast_message(server_socket, client_id, message)
 

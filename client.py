@@ -2,11 +2,10 @@ import socket
 import select
 import sys
 import string
-import getpass
 
 PORT = 31415
 USERNAME = ''
-authenticated = False
+AUTHENTICATED = False
 #Available message buffer size
 RECV_BUFFER = 4096
 
@@ -48,18 +47,42 @@ def chat_client():
                 outgoing_protocol_handler(client_socket, outgoing_msg)
                 prompt()
 
-
-def incoming_protocol_handler(server_socket, message):
+#Handles protocol messages coming in from the server
+def incoming_protocol_handler(client_socket, message):
     if not message:
         print '\nDisconnected from chat server'
         sys.exit()
+
+    command = message.split(': ')
+
+    if command[0] == 'LOGINSUCCESS':
+        global AUTHENTICATED
+        AUTHENTICATED = True
+
+    elif command[0] == 'ERR_USERNAMEUNAVAILABLE':
+        sys.stdout.write("Error: That username is unavailable\n")
+        login_prompt(client_socket)
+
+    elif AUTHENTICATED == False:
+        garbage = "Empty"
+
     else:
         sys.stdout.write(message)
         prompt()
 
 
+#Handles creation of protocol messages to send to the server
 def outgoing_protocol_handler(client_socket, message):
-    client_socket.send(message)
+    if AUTHENTICATED == False:
+        login_prompt(client_socket)
+    else:
+        client_socket.send(message)
+
+
+def login_prompt(client_socket):
+    global USERNAME
+    USERNAME = raw_input('Please enter your desired username: ')
+    client_socket.send('LOGIN: ' + USERNAME)
 
 
 def prompt():
