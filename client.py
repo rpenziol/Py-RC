@@ -53,30 +53,45 @@ def incoming_protocol_handler(client_socket, message):
         print '\nDisconnected from chat server'
         sys.exit()
 
+    global AUTHENTICATED
+
     command = message.split(': ')
 
-    if command[0] == 'LOGINSUCCESS':
-        global AUTHENTICATED
-        AUTHENTICATED = True
+    if AUTHENTICATED == False:
 
-    elif command[0] == 'ERR_USERNAMEUNAVAILABLE':
-        sys.stdout.write("Error: That username is unavailable\n")
-        login_prompt(client_socket)
+        if command[0] == 'LOGINSUCCESS':
+            AUTHENTICATED = True
 
-    elif AUTHENTICATED == False:
-        garbage = "Empty"
+        elif command[0] == 'ERR_USERNAMEUNAVAILABLE':
+            sys.stdout.write("Error: That username is unavailable\n")
+            login_prompt(client_socket)
 
-    else:
-        sys.stdout.write(message)
+
+    elif command[0] == 'JOINED':
+        #Clear prompt before printing
+        print '\x1b[2K\r'
+        sys.stdout.write(command[1] + " has joined the server.\n")
         prompt()
 
+    elif command[0] == 'MESSAGE':
+        #Clear prompt before printing
+        print '\x1b[2K\r'
+        sys.stdout.write('<' + command[1] + '> ' + command[2])
+        prompt()
+
+    else:
+        #Clear prompt before printing
+        print '\x1b[2K\r'
+        sys.stdout.write(message)
+        prompt()
 
 #Handles creation of protocol messages to send to the server
 def outgoing_protocol_handler(client_socket, message):
     if AUTHENTICATED == False:
         login_prompt(client_socket)
+
     else:
-        client_socket.send(message)
+        client_socket.send('MESSAGE: ' + USERNAME + ': ' + message)
 
 
 def login_prompt(client_socket):
@@ -86,7 +101,7 @@ def login_prompt(client_socket):
 
 
 def prompt():
-    sys.stdout.write('<' + USERNAME + '> ')
+    sys.stdout.write('<' + USERNAME + '>: ')
     sys.stdout.flush()
 
 

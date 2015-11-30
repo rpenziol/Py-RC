@@ -40,18 +40,19 @@ def chat_server():
                         incoming_protocol_handler(server_socket, client, data)
 
                 except:
-                    broadcast_message(server_socket, client, "Client (%s, %s) is offline" % addr)
-                    print "Client (%s, %s) is offline" % addr
-                    client.close()
-                    CONNECTION_LIST.remove(client)
-                    continue
+                    #broadcast_message(server_socket, client, "Client (%s, %s) is offline" % addr)
+                    print "Client (%s, %s) is offline - chat_server" % addr
+                    #client.close()
+                    #CONNECTION_LIST.remove(client)
+                    #del ONLINE_USERNAMES[client]
+                    #continue
 
     server_socket.close()
 
 
+#Handle incoming messages from clients
 def incoming_protocol_handler(server_socket, client_id, message):
-    #if(client_id not in ONLINE_USERNAMES.keys()):
-        #client_id.send("Server: Please login or register\n")
+    #Note using global variable
     global ONLINE_USERNAMES
 
     command = message.split(': ')
@@ -61,22 +62,33 @@ def incoming_protocol_handler(server_socket, client_id, message):
         if command[1] not in ONLINE_USERNAMES.values():
             ONLINE_USERNAMES[client_id] = command[1]
             client_id.send('LOGINSUCCESS')
+            broadcast_message(server_socket, client_id, 'JOINED: ' + ONLINE_USERNAMES[client_id])
+
         else:
             client_id.send('ERR_USERNAMEUNAVAILABLE')
 
-    broadcast_message(server_socket, client_id, message)
+    if command[0] == 'MESSAGE':
+        broadcast_message(server_socket, client_id, message)
+
+    else:
+        broadcast_message(server_socket, client_id, message)
 
 
+#Send message to all online clients - except the sending client
 def broadcast_message(server_socket, client_id, message):
     #Do not send message to server's socket or sending client
     for client in CONNECTION_LIST:
         if client != server_socket and client != client_id:
             try :
                 client.send(message)
+
             except :
                 #If unable to send to a socket, close and remove the connection
                 client.close()
                 CONNECTION_LIST.remove(client)
+                broadcast_message(server_socket, client, "Client (%s, %s) is offline" % addr)
+                print "Client (%s, %s) is offline - broadcast_message" % addr
+                del ONLINE_USERNAMES[client]
 
 
 if __name__ == '__main__':
