@@ -76,11 +76,10 @@ def incoming_protocol_handler(server_socket, client_id, message):
         broadcast_message(server_socket, 0, 'New room available: ' + command[1])
 
     elif command[0] == 'LISTROOMS':
-        room_names = ''
-        for name in ROOMS.keys():
-            room_names += name
+        list_rooms(client_id)
 
-        client_id.send(room_names)
+    elif command[0] == 'JOINROOM':
+        join_room(client_id, command[1])
 
     else:
         broadcast_message(server_socket, client_id, message)
@@ -101,6 +100,17 @@ def broadcast_message(server_socket, client_id, message):
                 broadcast_message(server_socket, client, "Client (%s, %s) is offline" % addr)
                 print "Client (%s, %s) is offline - broadcast_message" % addr
                 del ONLINE_USERNAMES[client]
+
+
+#TODO:Implementation
+def join_room(client_id, rooms):
+    print "join"
+
+
+#Send client list of all rooms
+def list_rooms(client_id):
+    #Get all room names, seperated by spaces
+    client_id.send('LROOM: ' + " ".join(ROOMS.keys()))
 
 
 if __name__ == '__main__':
