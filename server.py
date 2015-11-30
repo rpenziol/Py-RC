@@ -67,7 +67,7 @@ def incoming_protocol_handler(server_socket, client_id, message):
         else:
             client_id.send('ERR_USERNAMEUNAVAILABLE')
 
-    if command[0] == 'MESSAGE':
+    elif command[0] == 'MESSAGE':
         broadcast_message(server_socket, client_id, message)
 
     else:
