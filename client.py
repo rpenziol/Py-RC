@@ -87,8 +87,17 @@ def incoming_protocol_handler(client_socket, message):
 
 #Handles creation of protocol messages to send to the server
 def outgoing_protocol_handler(client_socket, message):
+
+    command = message.split(' ')
+
     if AUTHENTICATED == False:
         login_prompt(client_socket)
+
+    elif command[0] == '/mkroom':
+        client_socket.send('MKROOM: ' + command[1])
+
+    elif command[0] == '/listrooms\n':
+        client_socket.send('LISTROOMS: ')
 
     else:
         client_socket.send('MESSAGE: ' + USERNAME + ': ' + message)

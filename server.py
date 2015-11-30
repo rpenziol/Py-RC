@@ -1,14 +1,15 @@
 import socket
 import select
 import sys
+from collections import defaultdict
 
 HOST = ''
 PORT = 31415
-#List of connected clients
-CONNECTION_LIST = []
-#Mapping of connections and their usernames
-ONLINE_USERNAMES = {}
+CONNECTION_LIST = []  #List of connected clients
+ONLINE_USERNAMES = {}  #Mapping of connections and their usernames
+ROOMS = defaultdict(list)  #Mapping of room names to list of users in room
 RECV_BUFFER = 4096
+
 
 def chat_server():
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -53,7 +54,7 @@ def chat_server():
 #Handle incoming messages from clients
 def incoming_protocol_handler(server_socket, client_id, message):
     #Note using global variable
-    global ONLINE_USERNAMES
+    global ONLINE_USERNAMES, ROOMS
 
     command = message.split(': ')
 
@@ -69,6 +70,17 @@ def incoming_protocol_handler(server_socket, client_id, message):
 
     elif command[0] == 'MESSAGE':
         broadcast_message(server_socket, client_id, message)
+
+    elif command[0] == 'MKROOM':
+        ROOMS[command[1]] = ()
+        broadcast_message(server_socket, 0, 'New room available: ' + command[1])
+
+    elif command[0] == 'LISTROOMS':
+        room_names = ''
+        for name in ROOMS.keys():
+            room_names += name
+
+        client_id.send(room_names)
 
     else:
         broadcast_message(server_socket, client_id, message)
