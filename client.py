@@ -76,19 +76,25 @@ def incoming_protocol_handler(client_socket, message):
     elif command[0] == 'MESSAGE':
         #Clear prompt before printing
         print '\x1b[2K\r'
-        sys.stdout.write('<' + command[1] + '> ' + command[2])
+        print '<' + command[1] + '> ' + command[2]
+        prompt()
+
+    elif command[0] == 'LROOM':
+        #Clear prompt before printing
+        print '\x1b[2K\r'
+        print 'List of rooms: ' + command[1]
         prompt()
 
     else:
         #Clear prompt before printing
         print '\x1b[2K\r'
-        sys.stdout.write(message)
+        print message
         prompt()
 
 #Handles creation of protocol messages to send to the server
 def outgoing_protocol_handler(client_socket, message):
 
-    command = message.split(' ')
+    command = message.rsplit()
 
     if AUTHENTICATED == False:
         login_prompt(client_socket)
@@ -96,8 +102,11 @@ def outgoing_protocol_handler(client_socket, message):
     elif command[0] == '/mkroom':
         client_socket.send('MKROOM: ' + command[1])
 
-    elif command[0] == '/listrooms\n':
+    elif command[0] == '/listrooms':
         client_socket.send('LISTROOMS: ')
+
+    elif command[0] == '/join':
+        client_socket.send('JOINROOM: ' + command[1])
 
     else:
         client_socket.send('MESSAGE: ' + USERNAME + ': ' + message)
