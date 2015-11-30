@@ -70,19 +70,37 @@ def incoming_protocol_handler(client_socket, message):
     elif command[0] == 'JOINED':
         #Clear prompt before printing
         print '\x1b[2K\r'
-        sys.stdout.write(command[1] + " has joined the server.\n")
+        print command[1] + " has joined the server.\n"
         prompt()
 
     elif command[0] == 'MESSAGE':
         #Clear prompt before printing
         print '\x1b[2K\r'
-        print '<' + command[1] + '> ' + command[2]
+        print '<' + command[1] + '> ' + command[2]  #Sending user, followed by username
         prompt()
 
     elif command[0] == 'LROOM':
         #Clear prompt before printing
         print '\x1b[2K\r'
         print 'List of rooms: ' + command[1]
+        prompt()
+
+    elif command[0] == 'JOINEDROOM':
+        #Clear prompt before printing
+        print '\x1b[2K\r'
+        print 'Joined room: ' + command[1]
+        prompt()
+
+    elif command[0] == 'ERRNOSUCHROOM':
+        #Clear prompt before printing
+        print '\x1b[2K\r'
+        print 'Room: "' + command[1] + '" does not exist.'
+        prompt()
+
+    elif command[0] == 'ROOMMEMBERS:':
+        #Clear prompt before printing
+        print '\x1b[2K\r'
+        print 'List of room members: ' + command[1]
         prompt()
 
     else:
@@ -106,7 +124,12 @@ def outgoing_protocol_handler(client_socket, message):
         client_socket.send('LISTROOMS: ')
 
     elif command[0] == '/join':
-        client_socket.send('JOINROOM: ' + command[1])
+        #Remove user command, send concatinated list of room names
+        del command[0]
+        client_socket.send('JOINROOM: ' + " ".join(command))
+
+    elif command[0] == '/members':
+        client_socket.send('ROOMMEMBERS: ' + command[1])
 
     else:
         client_socket.send('MESSAGE: ' + USERNAME + ': ' + message)

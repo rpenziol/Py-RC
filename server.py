@@ -2,6 +2,7 @@ import socket
 import select
 import sys
 from collections import defaultdict
+from time import sleep
 
 HOST = ''
 PORT = 31415
@@ -73,19 +74,20 @@ def incoming_protocol_handler(server_socket, client_id, message):
 
     elif command[0] == 'MKROOM':
         ROOMS[command[1]] = ()
+        #Broadcast to all, including sender
         broadcast_message(server_socket, 0, 'New room available: ' + command[1])
 
     elif command[0] == 'LISTROOMS':
         list_rooms(client_id)
 
     elif command[0] == 'JOINROOM':
-        join_room(client_id, command[1])
+        join_rooms(client_id, command[1])
 
     else:
         broadcast_message(server_socket, client_id, message)
 
 
-#Send message to all online clients - except the sending client
+#Send message to all online clients - except the sending client_id
 def broadcast_message(server_socket, client_id, message):
     #Do not send message to server's socket or sending client
     for client in CONNECTION_LIST:
@@ -102,9 +104,19 @@ def broadcast_message(server_socket, client_id, message):
                 del ONLINE_USERNAMES[client]
 
 
-#TODO:Implementation
-def join_room(client_id, rooms):
-    print "join"
+#Add client's username to list of rooms
+def join_rooms(client_id, rooms):
+    global ROOMS
+    room_list = rooms.split()
+
+    for room in room_list:
+        sleep(0.1) #Prevent sending messages too fast, thus concatenating messages TODO: Add more elegant solution
+        if room in ROOMS.keys():
+            #Map username to room name
+            ROOMS[room] = ONLINE_USERNAMES[client_id]
+            client_id.send('JOINEDROOM: ' + room)
+        else:
+            client_id.send('ERRNOSUCHROOM: ' + room)
 
 
 #Send client list of all rooms
