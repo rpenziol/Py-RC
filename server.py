@@ -73,7 +73,7 @@ def incoming_protocol_handler(server_socket, client_id, message):
         broadcast_message(server_socket, client_id, message)
 
     elif command[0] == 'MKROOM':
-        ROOMS[command[1]] = ()
+        ROOMS[command[1]]
         #Broadcast to all, including sender
         broadcast_message(server_socket, 0, 'New room available: ' + command[1])
 
@@ -113,7 +113,7 @@ def join_rooms(client_id, rooms):
         sleep(0.1) #Prevent sending messages too fast, thus concatenating messages TODO: Add more elegant solution
         if room in ROOMS.keys():
             #Map username to room name
-            ROOMS[room] = ONLINE_USERNAMES[client_id]
+            ROOMS[room].append(ONLINE_USERNAMES[client_id])
             client_id.send('JOINEDROOM: ' + room)
         else:
             client_id.send('ERRNOSUCHROOM: ' + room)
