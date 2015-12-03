@@ -83,6 +83,9 @@ def incoming_protocol_handler(server_socket, client_id, message):
     elif command[0] == 'JOINROOM':
         join_rooms(client_id, command[1])
 
+    elif command[0] == 'ROOMMEMBERS':
+        list_members(client_id, command[1])
+
     else:
         broadcast_message(server_socket, client_id, message)
 
@@ -122,7 +125,16 @@ def join_rooms(client_id, rooms):
 #Send client list of all rooms
 def list_rooms(client_id):
     #Get all room names, seperated by spaces
-    client_id.send('LROOM: ' + " ".join(ROOMS.keys()))
+    client_id.send('LROOM: ' + ", ".join(ROOMS.keys()))
+
+
+#Send client list of clients in a given 'room'
+def list_members(client_id, room):
+    if room in ROOMS.keys():
+        #If the room exists, give its name, followed by the list of members
+        client_id.send('ROOMMEMBERS: ' + room + ': ' + ", ".join(ROOMS[room]))
+    else:
+        client_id.send('ERRNOSUCHROOM: ' + room)
 
 
 if __name__ == '__main__':
