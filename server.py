@@ -70,7 +70,7 @@ def incoming_protocol_handler(server_socket, client_id, message):
             client_id.send('ERR_USERNAMEUNAVAILABLE')
 
     elif command[0] == 'MESSAGE':
-        broadcast_message(server_socket, client_id, message)
+        broadcast_message(server_socket, 0, message)
 
     elif command[0] == 'MKROOM':
         ROOMS[command[1]]
@@ -82,6 +82,9 @@ def incoming_protocol_handler(server_socket, client_id, message):
 
     elif command[0] == 'JOINROOM':
         join_rooms(client_id, command[1])
+
+    elif command[0] == 'LEAVEROOM':
+        leave_room(client_id, command[1])
 
     elif command[0] == 'ROOMMEMBERS':
         list_members(client_id, command[1])
@@ -107,6 +110,12 @@ def broadcast_message(server_socket, client_id, message):
                 del ONLINE_USERNAMES[client]
 
 
+#Send client's message to all members in a list of rooms
+def message_rooms(client_id, rooms, message):
+    #TODO: Implementation
+    room_list = rooms.split()
+
+
 #Add client's username to list of rooms
 def join_rooms(client_id, rooms):
     global ROOMS
@@ -119,7 +128,21 @@ def join_rooms(client_id, rooms):
             ROOMS[room].append(ONLINE_USERNAMES[client_id])
             client_id.send('JOINEDROOM: ' + room)
         else:
-            client_id.send('ERRNOSUCHROOM: ' + room)
+            send_error_nosuchroom(client_id, room)
+
+
+#Remove client's username from given room's list of members
+def leave_room(client_id, room):
+    global ROOMS
+    if room in ROOMS.keys(): #check that the room exists
+        if ONLINE_USERNAMES[client_id] in ROOMS[room]: #check that user is in room
+            #Loop up username for client's socket, and remove them from the room
+            ROOMS[room].remove(ONLINE_USERNAMES[client_id])
+
+        client_id.send("LEFTROOM: " + room)
+
+    else:
+        send_error_nosuchroom(client_id, room)
 
 
 #Send client list of all rooms
@@ -134,7 +157,12 @@ def list_members(client_id, room):
         #If the room exists, give its name, followed by the list of members
         client_id.send('ROOMMEMBERS: ' + room + ': ' + ", ".join(ROOMS[room]))
     else:
-        client_id.send('ERRNOSUCHROOM: ' + room)
+        send_error_nosuchroom(client_id, room)
+
+
+#Send the client an error message warning that the room doesn't exist
+def send_error_nosuchroom(client_id, room):
+    client_id.send('ERRNOSUCHROOM: ' + room)
 
 
 if __name__ == '__main__':

@@ -91,6 +91,12 @@ def incoming_protocol_handler(client_socket, message):
         print 'Joined room: ' + command[1]
         prompt()
 
+    elif command[0] == 'LEFTROOM':
+        #Clear prompt before printing
+        print '\x1b[2K\r'
+        print 'Left room: ' + command[1]
+        prompt()
+
     elif command[0] == 'ERRNOSUCHROOM':
         #Clear prompt before printing
         print '\x1b[2K\r'
@@ -128,6 +134,9 @@ def outgoing_protocol_handler(client_socket, message):
         #Remove user command, send concatinated list of room names
         del command[0]
         client_socket.send('JOINROOM: ' + " ".join(command))
+
+    elif command[0] == '/leave':
+        client_socket.send('LEAVEROOM: ' + command[1])
 
     elif command[0] == '/members':
         client_socket.send('ROOMMEMBERS: ' + command[1])
