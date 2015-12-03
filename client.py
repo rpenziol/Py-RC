@@ -94,13 +94,14 @@ def incoming_protocol_handler(client_socket, message):
     elif command[0] == 'ERRNOSUCHROOM':
         #Clear prompt before printing
         print '\x1b[2K\r'
-        print 'Room: "' + command[1] + '" does not exist.'
+        print 'Room "' + command[1] + '" does not exist.'
         prompt()
 
-    elif command[0] == 'ROOMMEMBERS:':
+    elif command[0] == 'ROOMMEMBERS':
         #Clear prompt before printing
         print '\x1b[2K\r'
-        print 'List of room members: ' + command[1]
+        #Print room name, followed by list of members
+        print 'List of room "' + command[1] + '" members: ' + command[2]
         prompt()
 
     else:
