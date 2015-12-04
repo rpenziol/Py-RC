@@ -110,6 +110,12 @@ def incoming_protocol_handler(client_socket, message):
         print 'List of room "' + command[1] + '" members: ' + command[2]
         prompt()
 
+    elif command[0] == 'RMESSAGE':
+        #Clear prompt before printing
+        print '\x1b[2K\r'
+        print '[ ' + command[1] + ' ]' + '<' + command[2] + '> ' + command[3]
+        prompt()
+
     else:
         #Clear prompt before printing
         print '\x1b[2K\r'
@@ -140,6 +146,11 @@ def outgoing_protocol_handler(client_socket, message):
 
     elif command[0] == '/members':
         client_socket.send('ROOMMEMBERS: ' + command[1])
+
+    elif command[0] == '/rmessage':
+        #Remove user command, send concatinated list of rooms, and message
+        del command[0]
+        client_socket.send('RMESSAGE: ' + " ".join(command))
 
     else:
         client_socket.send('MESSAGE: ' + USERNAME + ': ' + message)
