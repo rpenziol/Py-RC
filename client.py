@@ -1,7 +1,7 @@
 import socket
 import select
 import sys
-import string
+import struct
 
 PORT = 31415
 USERNAME = ''
@@ -17,6 +17,9 @@ def chat_client():
 
     HOST = sys.argv[1]
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    l_onoff = 1
+    l_linger = 0
+    client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack('ii', l_onoff, l_linger))
     client_socket.settimeout(2)
 
     #Attempt connection to remote host
@@ -180,6 +183,9 @@ def outgoing_protocol_handler(client_socket, message):
         #Remove user command, send username concatinated with message
         del command[0]
         client_socket.send('DMESSAGE: ' + " ".join(command))
+
+    elif command[0] == '/quit':
+        client_socket.send('QUIT: ')
 
     else:
         client_socket.send('MESSAGE: ' + USERNAME + ': ' + message)
