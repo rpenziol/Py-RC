@@ -103,6 +103,18 @@ def incoming_protocol_handler(client_socket, message):
         print 'Room "' + command[1] + '" does not exist.'
         prompt()
 
+    elif command[0] == 'ERRALREADYMEMBER':
+        #Clear prompt before printing
+        print '\x1b[2K\r'
+        print 'You are already a member of the room "' + command[1] + '".'
+        prompt()
+
+    elif command[0] == 'ERRNOTMEMBER':
+        #Clear prompt before printing
+        print '\x1b[2K\r'
+        print 'You are not a member of the room "' + command[1] + '".'
+        prompt()
+
     elif command[0] == 'ROOMMEMBERS':
         #Clear prompt before printing
         print '\x1b[2K\r'

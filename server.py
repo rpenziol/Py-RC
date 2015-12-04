@@ -114,12 +114,6 @@ def broadcast_message(server_socket, client_id, message):
                 del ONLINE_USERNAMES[client]
 
 
-#Send client's message to all members in a list of rooms
-def message_rooms(client_id, rooms, message):
-    #TODO: Implementation
-    room_list = rooms.split()
-
-
 #Add client's username to list of rooms
 def join_rooms(client_id, rooms):
     global ROOMS
@@ -128,9 +122,12 @@ def join_rooms(client_id, rooms):
     for room in room_list:
         sleep(0.1) #Prevent sending messages too fast, thus concatenating messages TODO: Add more elegant solution
         if room in ROOMS.keys():
-            #Map socket to room name
-            ROOMS[room].append(client_id)
-            client_id.send('JOINEDROOM: ' + room)
+            if client_id not in ROOMS[room]:
+                #Map socket to room name
+                ROOMS[room].append(client_id)
+                client_id.send('JOINEDROOM: ' + room)
+            else:
+                client_id.send('ERRALREADYMEMBER: ' + room)
         else:
             send_error_nosuchroom(client_id, room)
 
@@ -142,8 +139,9 @@ def leave_room(client_id, room):
         if client_id in ROOMS[room]: #check that user is in room
             #Loop up username for client's socket, and remove them from the room
             ROOMS[room].remove(client_id)
-
-        client_id.send("LEFTROOM: " + room)
+            client_id.send("LEFTROOM: " + room)
+        else:
+            send_error_notmember(client_id, room)
 
     else:
         send_error_nosuchroom(client_id, room)
