@@ -89,6 +89,10 @@ def incoming_protocol_handler(server_socket, client_id, message):
     elif command[0] == 'ROOMMEMBERS':
         list_members(client_id, command[1])
 
+    elif command[0] == 'RMESSAGE':
+        rooms = command[1].split(' ')
+        room_message(client_id, rooms, command[2])
+
     else:
         broadcast_message(server_socket, client_id, message)
 
@@ -124,8 +128,8 @@ def join_rooms(client_id, rooms):
     for room in room_list:
         sleep(0.1) #Prevent sending messages too fast, thus concatenating messages TODO: Add more elegant solution
         if room in ROOMS.keys():
-            #Map username to room name
-            ROOMS[room].append(ONLINE_USERNAMES[client_id])
+            #Map socket to room name
+            ROOMS[room].append(client_id)
             client_id.send('JOINEDROOM: ' + room)
         else:
             send_error_nosuchroom(client_id, room)
@@ -135,9 +139,9 @@ def join_rooms(client_id, rooms):
 def leave_room(client_id, room):
     global ROOMS
     if room in ROOMS.keys(): #check that the room exists
-        if ONLINE_USERNAMES[client_id] in ROOMS[room]: #check that user is in room
+        if client_id in ROOMS[room]: #check that user is in room
             #Loop up username for client's socket, and remove them from the room
-            ROOMS[room].remove(ONLINE_USERNAMES[client_id])
+            ROOMS[room].remove(client_id)
 
         client_id.send("LEFTROOM: " + room)
 
@@ -154,15 +158,36 @@ def list_rooms(client_id):
 #Send client list of clients in a given 'room'
 def list_members(client_id, room):
     if room in ROOMS.keys():
+        members = []
         #If the room exists, give its name, followed by the list of members
-        client_id.send('ROOMMEMBERS: ' + room + ': ' + ", ".join(ROOMS[room]))
+        for socket in ROOMS[room]:
+            members.append(ONLINE_USERNAMES[socket])
+        client_id.send('ROOMMEMBERS: ' + room + ': ' + ", ".join(members))
     else:
         send_error_nosuchroom(client_id, room)
+
+
+#Send a message to all members of a list of rooms
+def room_message(client_id, room_list, message):
+    for room in room_list:
+        if room in ROOMS.keys():  #Check that room exists
+            if client_id in ROOMS[room]:  #Check that sender belongs to room
+                for client in ROOMS[room]:
+                    client.send('RMESSAGE: ' + room + ': ' + ONLINE_USERNAMES[client_id] + ': ' + message)
+            else:
+                send_error_notmember(client_id, room)
+        else:
+            send_error_nosuchroom(client_id, room)
 
 
 #Send the client an error message warning that the room doesn't exist
 def send_error_nosuchroom(client_id, room):
     client_id.send('ERRNOSUCHROOM: ' + room)
+
+
+#Send the client an error to inform that they're not a member of the room
+def send_error_notmember(client_id, room):
+    client_id.send('ERRNOTMEMBER: ' + room)
 
 
 if __name__ == '__main__':
