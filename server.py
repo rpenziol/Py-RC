@@ -1,6 +1,7 @@
 import socket
 import select
 import sys
+import struct
 from collections import defaultdict
 from time import sleep
 
@@ -14,9 +15,14 @@ RECV_BUFFER = 4096
 
 def chat_server():
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    l_onoff = 1
+    l_linger = 0
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack('ii', l_onoff, l_linger))
+    #server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_socket.bind((HOST, PORT))
     server_socket.listen(10)
+
+
 
     #Add server socket to readable connections
     CONNECTION_LIST.append(server_socket)
@@ -95,6 +101,8 @@ def incoming_protocol_handler(server_socket, client_id, message):
 
     elif command[0] == 'DMESSAGE':
         direct_message(client_id, command[1], command[2])
+    elif command[0] == 'QUIT':
+        disconnect(client_id)
 
     else:
         broadcast_message(server_socket, client_id, message)
@@ -203,6 +211,10 @@ def send_error_nosuchroom(client_id, room):
 #Send the client an error to inform that they're not a member of the room
 def send_error_notmember(client_id, room):
     client_id.send('ERRNOTMEMBER: ' + room)
+
+
+def disconnect(client_id):
+    print "TODO"
 
 
 if __name__ == '__main__':
