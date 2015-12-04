@@ -62,7 +62,7 @@ def incoming_protocol_handler(client_socket, message):
         if command[0] == 'LOGINSUCCESS':
             AUTHENTICATED = True
 
-        elif command[0] == 'ERR_USERNAMEUNAVAILABLE':
+        elif command[0] == 'ERRUSERNAMEUNAVAILABLE':
             sys.stdout.write("Error: That username is unavailable\n")
             login_prompt(client_socket)
 
@@ -115,6 +115,12 @@ def incoming_protocol_handler(client_socket, message):
         print 'You are not a member of the room "' + command[1] + '".'
         prompt()
 
+    elif command[0] == 'ERRNOSUCHUSER':
+        #Clear prompt before printing
+        print '\x1b[2K\r'
+        print 'The user "' + command[1] + '" does not exist.'
+        prompt()
+
     elif command[0] == 'ROOMMEMBERS':
         #Clear prompt before printing
         print '\x1b[2K\r'
@@ -126,6 +132,12 @@ def incoming_protocol_handler(client_socket, message):
         #Clear prompt before printing
         print '\x1b[2K\r'
         print '[ ' + command[1] + ' ]' + '<' + command[2] + '> ' + command[3]
+        prompt()
+
+    elif command[0] == 'DMESSAGE':
+        #Clear prompt before printing
+        print '\x1b[2K\r'
+        print '[PRIVATE] <' + command[1] + '> ' + command[2]
         prompt()
 
     else:
@@ -163,6 +175,11 @@ def outgoing_protocol_handler(client_socket, message):
         #Remove user command, send concatinated list of rooms, and message
         del command[0]
         client_socket.send('RMESSAGE: ' + " ".join(command))
+
+    elif command[0] == '/dmessage':
+        #Remove user command, send username concatinated with message
+        del command[0]
+        client_socket.send('DMESSAGE: ' + " ".join(command))
 
     else:
         client_socket.send('MESSAGE: ' + USERNAME + ': ' + message)

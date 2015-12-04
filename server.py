@@ -67,7 +67,7 @@ def incoming_protocol_handler(server_socket, client_id, message):
             broadcast_message(server_socket, client_id, 'JOINED: ' + ONLINE_USERNAMES[client_id])
 
         else:
-            client_id.send('ERR_USERNAMEUNAVAILABLE')
+            client_id.send('ERRUSERNAMEUNAVAILABLE')
 
     elif command[0] == 'MESSAGE':
         broadcast_message(server_socket, 0, message)
@@ -92,6 +92,9 @@ def incoming_protocol_handler(server_socket, client_id, message):
     elif command[0] == 'RMESSAGE':
         rooms = command[1].split(' ')
         room_message(client_id, rooms, command[2])
+
+    elif command[0] == 'DMESSAGE':
+        direct_message(client_id, command[1], command[2])
 
     else:
         broadcast_message(server_socket, client_id, message)
@@ -176,6 +179,20 @@ def room_message(client_id, room_list, message):
                 send_error_notmember(client_id, room)
         else:
             send_error_nosuchroom(client_id, room)
+
+
+#Send a message to the target user
+def direct_message(client_id, target_username, message):
+    if target_username in ONLINE_USERNAMES.values():
+        #Reverse dictionary lookup to get target's socket
+        target_username_socket = (key for key,value in ONLINE_USERNAMES.items() if value == target_username).next()
+        target_username_socket.send('DMESSAGE: ' + ONLINE_USERNAMES[client_id] + ': ' + message)
+
+        #Send message to self, unless private message was directed as oneself
+        if client_id != target_username_socket:
+            client_id.send('DMESSAGE: ' + ONLINE_USERNAMES[client_id] + ': ' + message)
+    else:
+        client_id.send('ERRNOSUCHUSER: ' + target_username)
 
 
 #Send the client an error message warning that the room doesn't exist
