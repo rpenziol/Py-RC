@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import socket
 import select
 import sys
@@ -41,8 +42,14 @@ def chat_client():
         for sock in read_sockets:
             #Incoming message from server
             if sock == client_socket:
-                incoming_msg = sock.recv(RECV_BUFFER)
-                incoming_protocol_handler(sock, incoming_msg)
+                try:
+                    incoming_msg = sock.recv(RECV_BUFFER)
+                    incoming_protocol_handler(sock, incoming_msg)
+
+                except:
+                    #If there is a problem with the socket connection, abort
+                    print 'Connection to server lost'
+                    sys.exit()
 
             #User-entered message
             else:
@@ -52,12 +59,10 @@ def chat_client():
 
 #Handles protocol messages coming in from the server
 def incoming_protocol_handler(client_socket, message):
-    if not message:
-        print '\nDisconnected from chat server'
-        sys.exit()
 
     global AUTHENTICATED
 
+    #Capture command name, and args from server
     command = message.split(': ')
 
     if AUTHENTICATED == False:
@@ -76,7 +81,7 @@ def incoming_protocol_handler(client_socket, message):
         print command[1] + " has joined the server.\n"
         prompt()
 
-    elif command[0] == 'MESSAGE':
+    elif command[0] == 'MESSAGE': #Global message
         #Clear prompt before printing
         print '\x1b[2K\r'
         print '<' + command[1] + '> ' + command[2]  #Sending user, followed by username
@@ -131,13 +136,13 @@ def incoming_protocol_handler(client_socket, message):
         print 'List of room "' + command[1] + '" members: ' + command[2]
         prompt()
 
-    elif command[0] == 'RMESSAGE':
+    elif command[0] == 'RMESSAGE': #Room message
         #Clear prompt before printing
         print '\x1b[2K\r'
         print '[ ' + command[1] + ' ]' + '<' + command[2] + '> ' + command[3]
         prompt()
 
-    elif command[0] == 'DMESSAGE':
+    elif command[0] == 'DMESSAGE': #Direct message
         #Clear prompt before printing
         print '\x1b[2K\r'
         print '[PRIVATE] <' + command[1] + '> ' + command[2]
@@ -186,17 +191,21 @@ def outgoing_protocol_handler(client_socket, message):
 
     elif command[0] == '/quit':
         client_socket.send('QUIT: ')
+        client_socket.close()
+        sys.exit()
 
     else:
         client_socket.send('MESSAGE: ' + USERNAME + ': ' + message)
 
 
+#Prompts user to login
 def login_prompt(client_socket):
     global USERNAME
     USERNAME = raw_input('Please enter your desired username: ')
     client_socket.send('LOGIN: ' + USERNAME)
 
 
+#Prompts user with username to write a message
 def prompt():
     sys.stdout.write('<' + USERNAME + '>: ')
     sys.stdout.flush()
