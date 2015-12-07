@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import socket
 import select
 import sys
@@ -48,12 +49,8 @@ def chat_server():
                         incoming_protocol_handler(server_socket, client, data)
 
                 except:
-                    #broadcast_message(server_socket, client, "Client (%s, %s) is offline" % addr)
-                    print "Client (%s, %s) is offline - chat_server" % addr
-                    #client.close()
-                    #CONNECTION_LIST.remove(client)
-                    #del ONLINE_USERNAMES[client]
-                    #continue
+                    #The client unexpectedly disconnected
+                    disconnect(client, addr)
 
     server_socket.close()
 
@@ -76,7 +73,7 @@ def incoming_protocol_handler(server_socket, client_id, message):
             client_id.send('ERRUSERNAMEUNAVAILABLE')
 
     elif command[0] == 'MESSAGE':
-        broadcast_message(server_socket, 0, message)
+        broadcast_message(server_socket, client_id, message)
 
     elif command[0] == 'MKROOM':
         ROOMS[command[1]]
@@ -101,6 +98,7 @@ def incoming_protocol_handler(server_socket, client_id, message):
 
     elif command[0] == 'DMESSAGE':
         direct_message(client_id, command[1], command[2])
+
     elif command[0] == 'QUIT':
         disconnect(client_id)
 
@@ -113,16 +111,7 @@ def broadcast_message(server_socket, client_id, message):
     #Do not send message to server's socket or sending client
     for client in CONNECTION_LIST:
         if client != server_socket and client != client_id:
-            try :
-                client.send(message)
-
-            except :
-                #If unable to send to a socket, close and remove the connection
-                client.close()
-                CONNECTION_LIST.remove(client)
-                broadcast_message(server_socket, client, "Client (%s, %s) is offline" % addr)
-                print "Client (%s, %s) is offline - broadcast_message" % addr
-                del ONLINE_USERNAMES[client]
+            client.send(message)
 
 
 #Add client's username to list of rooms
@@ -179,6 +168,7 @@ def list_members(client_id, room):
 #Send a message to all members of a list of rooms
 def room_message(client_id, room_list, message):
     for room in room_list:
+        sleep(0.1) #Prevent sending messages too fast, thus concatenating messages TODO: Add more elegant solution
         if room in ROOMS.keys():  #Check that room exists
             if client_id in ROOMS[room]:  #Check that sender belongs to room
                 for client in ROOMS[room]:
@@ -213,9 +203,18 @@ def send_error_notmember(client_id, room):
     client_id.send('ERRNOTMEMBER: ' + room)
 
 
-def disconnect(client_id):
-    print "TODO"
+#Remove client data from server, and disconnect
+def disconnect(client_id, addr):
+    client_id.close() #Close socket
+    #Remove user from all rooms
+    for room in ROOMS:
+        if client_id in ROOMS[room]:
+            ROOMS[room].remove(client_id)
 
+    #Remove user from list of online users
+    del ONLINE_USERNAMES[client_id]
+    CONNECTION_LIST.remove(client_id)
+    print 'Client (%s, %s) is offline.' % addr
 
 if __name__ == '__main__':
     #Exit application if any unhandled exception is thrown
